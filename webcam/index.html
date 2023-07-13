@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset=utf-8 />
+  <title>HLS streaming</title>
+    <link href="./style/video-js.css" rel="stylesheet">
+  </head>
+  <body>
+    <h1>HLS player!</h1>
+    <video-js id="video_id" class="vjs-default-skin" controls preload="auto" width="640" height="360">
+      <source src="http://192.168.6.90:9999/play.m3u8" type="application/x-mpegURL">
+    </video-js>
+    <script src="./js/video.js"></script>
+    <script src="./js/videojs-http-streaming.js"></script>
+    <script>
+      var player = videojs('video_id');
+    </script>
+  </body>
+</html>
