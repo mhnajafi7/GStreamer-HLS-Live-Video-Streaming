@@ -131,7 +131,7 @@ All the code is in the playvideo directory.
 		/* Initialize GStreamer */
 		gst_init(&argc, &argv);
 		
-		/* Build the pipeline */						//Edit playlist-location and also replace your IP & Port
+		/* Build the pipeline */				//Edit playlist-location and also replace your IP & Port
 		pipeline = gst_parse_launch(
 		"v4l2src device=/dev/video0 ! videoconvert ! videoscale ! videorate ! "
 		"video/x-raw,format=I420,width=240,height=144,framerate=30/1 ! "
