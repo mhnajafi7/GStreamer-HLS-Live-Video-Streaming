@@ -14,7 +14,7 @@ int tutorial_main(int argc, char *argv[]) {
     "video/x-raw,format=I420,width=240,height=144,framerate=30/1 ! "
     "videorate ! video/x-raw,format=I420,framerate=30/1 ! clockoverlay ! "
     "x264enc tune=zerolatency ! mpegtsmux ! hlssink playlist-root=http://192.168.6.90:9999 "
-    "playlist-location=play.m3u8 location=/path/to/part2/hls-browser-webcam/segment_%05d.ts "
+    "playlist-location=play.m3u8 location=/path/to/segment_%05d.ts "
     "target-duration=10 max-files=6",
     NULL);
 

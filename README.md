@@ -3,11 +3,11 @@ GStreamer provides a comprehensive set of tools and libraries that enable us to 
 
 ## Install GStreamer
 ```bash
-	$ sudo apt update
-	$ sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev 
-	$ sudo apt-get install libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
-	$ sudo apt-get install gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools 
-    $ sudo apt-get install gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+$ sudo apt update
+$ sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev 
+$ sudo apt-get install libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+$ sudo apt-get install gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools 
+$ sudo apt-get install gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
 ```
 
 Once all the necessary libraries and plugins are installed, we can begin developing our multimedia applications using GStreamer. By having all the required components installed, we can ensure that our applications run smoothly and efficiently.
@@ -18,10 +18,12 @@ To be able to use pkg-config, we must first install it on our system. pkg-config
 
 To install pkg-config, we use the appropriate installation command for our operating system. In this case, since we are using Ubuntu, we can use the apt package manager to download and install pkg-config. This can be done easily using the following command:
 ```bash
-	$ sudo apt install pkg-config
+$ sudo apt install pkg-config
 ```
 
-## Stream video C Code
+## Stream video
+
+### C Code
 ```C
 #include <gst/gst.h>
 	
@@ -73,7 +75,7 @@ To install pkg-config, we use the appropriate installation command for our opera
 		return tutorial_main(argc, argv);
 	}
 ```
-## CMake and run
+### CMake and run
 To compile `playvideo.c` with the `gstreamer-1.0` library, we can use the CMake build system:
 
 1. Create a new file called `CMakeLists.txt` in the same directory as `playvideo.c`. Add the following contents to the file:
@@ -95,22 +97,116 @@ set_target_properties(playvideo PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOUR
 
 3. Create a build directory and navigate into it:
 ```bash
-	$  mkdir build
-	$‌  cd build
-	$  cmake ..
-	$  make
+$  mkdir build
+$‌  cd build
+$  cmake ..
+$  make
 ```
-This will compile playvideo.c and link it with the gstreamer-1.0 library to produce an executable called playvideo in the main direcotry. All the code is in the CMake directory.
+This will compile playvideo.c and link it with the gstreamer-1.0 library to produce an executable called playvideo in the main direcotry.
 
 Then, we can serve the directory with the following command:
 ```bash
-	$  python3 -m http.server 8888
+$  python3 -m http.server 8888
 ```
 After that, we can run the file with the command:
 ```bash
-	$  ./playvideo
+$  ./playvideo
 ```
 Finally, we can open a web browser in both the Ubuntu system and phone browser connected to the same network, and go to 192.168.6.90:8888 to view the video.
 All the code is in the playvideo directory.	
 
 <a target="blank"><img align="center" src="images/p1.png"/></a>
+
+## Stream Webcam
+
+### C Code
+```C
+#include <gst/gst.h>
+	
+	int tutorial_main(int argc, char *argv[]) {
+		GstElement *pipeline;
+		GstBus *bus;
+		GstMessage *msg;
+		
+		/* Initialize GStreamer */
+		gst_init(&argc, &argv);
+		
+		/* Build the pipeline */						//Edit playlist-location and also replace your IP & Port
+		pipeline = gst_parse_launch(
+		"v4l2src device=/dev/video0 ! videoconvert ! videoscale ! videorate ! "
+		"video/x-raw,format=I420,width=240,height=144,framerate=30/1 ! "
+		"videorate ! video/x-raw,format=I420,framerate=30/1 ! clockoverlay ! "
+		"x264enc tune=zerolatency ! mpegtsmux ! hlssink playlist-root=http://192.168.6.90:9999 "
+		"playlist-location=play.m3u8 location=/path/to/part2/hls-browser-webcam/segment_%05d.ts "
+		"target-duration=10 max-files=6",
+		NULL);
+		
+		
+		/* Start playing */
+		gst_element_set_state(pipeline, GST_STATE_PLAYING);
+		
+		/* Wait until error or EOS */
+		bus = gst_element_get_bus(pipeline);
+		msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
+		GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+		
+		/* See next tutorial for proper error message handling/parsing */
+		if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
+			g_error("An error occurred! Re-run with the GST_DEBUG=*:WARN environment "
+			"variable set for more details.");
+		}
+		
+		/* Free resources */
+		gst_message_unref(msg);
+		gst_object_unref(bus);
+		gst_element_set_state(pipeline, GST_STATE_NULL);
+		gst_object_unref(pipeline);
+		return 0;
+	}
+	
+	int main(int argc, char *argv[]) {
+		return tutorial_main(argc, argv);
+	}
+```
+
+### CMake and run
+To compile `webcam.c` with the `gstreamer-1.0` library, we can use the CMake build system:
+
+1. Create a new file called `CMakeLists.txt` in the same directory as `webcam.c`. Add the following contents to the file:
+```CMAKE
+cmake_minimum_required(VERSION 3.2)
+
+project(webcam.c)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GST REQUIRED gstreamer-1.0)
+
+add_executable(webcam webcam.c)
+target_include_directories(webcam PUBLIC ${GST_INCLUDE_DIRS})
+target_link_libraries(webcam ${GST_LIBRARIES})
+set_target_properties(webcam PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+```
+
+2. Open a terminal and navigate to the directory containing `webcam.c` and `CMakeLists.txt`.
+
+3. Create a build directory and navigate into it:
+```bash
+$  mkdir build
+$‌  cd build
+$  cmake ..
+$  make
+```
+This will compile webcam.c and link it with the gstreamer-1.0 library to produce an executable called playvideo in the main direcotry.
+Then, we can serve the directory with the following command:
+```bash
+$  python3 -m http.server 999
+```
+After that, we can run the file with the command:
+```bash
+$  ./webcam
+```
+Now,we can open a web browser in both the Ubuntu system and phone browser connected to the same network, and go to 192.168.6.90:9999 to view the video. All the code is in the webcam directory.
+
+
+<a target="blank"><img align="center" src="images/p2.png"/></a>
