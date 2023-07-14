@@ -200,7 +200,7 @@ $  make
 This will compile webcam.c and link it with the gstreamer-1.0 library to produce an executable called playvideo in the main direcotry.
 Then, we can serve the directory with the following command:
 ```bash
-$  python3 -m http.server 999
+$  python3 -m http.server 9999
 ```
 After that, we can run the file with the command:
 ```bash
